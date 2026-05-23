@@ -1564,10 +1564,14 @@ class Audio {
     h.g.gain.setValueAtTime(0,t);
     h.g.gain.linearRampToValueAtTime(.38,t+2.2);
   }
-  step(tile){
-    const now=Date.now(); if(now-this.lastStep<290)return;
+  step(tile,running){
+    const now=Date.now();
+    // Walk: ~460ms between steps (≈2 steps/sec), Run: ~330ms (≈3 steps/sec)
+    const interval=running?330:460;
+    if(now-this.lastStep<interval)return;
     this.lastStep=now;
-    this.play(tile===TILE.FLOOR||tile===TILE.FLOOR2?'STEP_S':'STEP_D',{vol:.28});
+    const vol=running?0.38:0.22;
+    this.play(tile===TILE.FLOOR||tile===TILE.FLOOR2?'STEP_S':'STEP_D',{vol});
   }
   resume(){
     if(this.ctx&&this.ctx.state==='suspended'){
@@ -2364,7 +2368,7 @@ class Player{
 
     if(this.moving&&audio){
       const tx=Math.floor(this.x/T),ty=Math.floor(this.y/T);
-      audio.step(map.get(tx,ty));
+      audio.step(map.get(tx,ty),this.running);
     }
 
     // ── MELEE ATTACK ──
