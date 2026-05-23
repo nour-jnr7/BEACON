@@ -1713,7 +1713,7 @@ class GameMap{
   }
   get(x,y){if(x<0||x>=MW||y<0||y>=MH)return TILE.VOID;return this.tiles[y*MW+x];}
   set(x,y,v){if(x>=0&&x<MW&&y>=0&&y<MH)this.tiles[y*MW+x]=v;}
-  walk(x,y){if(this.blockedTiles&&this.blockedTiles.has(x+','+y))return false;const t=this.get(x,y);return t===TILE.FLOOR||t===TILE.FLOOR2||t===TILE.FLOOR3||t===TILE.WATER;}
+  walk(x,y){if(this.blockedTiles&&this.blockedTiles.has(y*MW+x))return false;const t=this.get(x,y);return t===TILE.FLOOR||t===TILE.FLOOR2||t===TILE.FLOOR3||t===TILE.WATER;}
   // FIX13: walkAny ignores sealed-door blockedTiles — used by creature pathfinder
   walkAny(x,y){const t=this.get(x,y);return t===TILE.FLOOR||t===TILE.FLOOR2||t===TILE.FLOOR3||t===TILE.WATER;}
 
@@ -2495,7 +2495,8 @@ class Player{
         if(!map.walk(tx,ty)){
           const wl=tx*T,wr=tx*T+T,wt=ty*T,wb=ty*T+T;
           if(this.x+R>wl&&this.x-R<wr&&this.y+R>wt&&this.y-R<wb){
-            if(this.vx>0)this.x=wl-R;else this.x=wr+R; this.vx=0;
+            // Use center comparison (not velocity sign) to handle vx=0 case correctly
+            if(this.x<(wl+wr)/2)this.x=wl-R;else this.x=wr+R; this.vx=0;
           }
         }
     this.y+=this.vy;
@@ -2504,7 +2505,7 @@ class Player{
         if(!map.walk(tx,ty)){
           const wl=tx*T,wr=tx*T+T,wt=ty*T,wb=ty*T+T;
           if(this.x+R>wl&&this.x-R<wr&&this.y+R>wt&&this.y-R<wb){
-            if(this.vy>0)this.y=wt-R;else this.y=wb+R; this.vy=0;
+            if(this.y<(wt+wb)/2)this.y=wt-R;else this.y=wb+R; this.vy=0;
           }
         }
   }
@@ -3176,65 +3177,50 @@ class Item{
 //  MINIMAP
 // ──────────────────────────────────────────
 class Minimap{
-  constructor(el){this.el=el;this.ctx=el.getContext('2d');}
-  draw(map,players,creatures,beacon,items,game){ // FIX15: game param for new elements
-    const ctx=this.ctx,W=this.el.width,H=this.el.height;
+  constructor(el){
+    this.el=el;this.ctx=el.getContext('2d');
+    // Offscreen canvas for static tile layer — rendered ONCE, then composited
+    this._tileCanvas=document.createElement('canvas');
+    this._tileCtx=null;
+    this._tileMap=null; // reference to detect map change
+    this._tileDirty=true;
+  }
+
+  // Call this whenever doors open or the map changes
+  invalidateTiles(){this._tileDirty=true;}
+
+  _buildTileCache(map,W,H){
+    const tc=this._tileCanvas;
+    tc.width=W;tc.height=H;
+    const ctx=this._tileCtx=tc.getContext('2d');
     const sx=W/MW,sy=H/MH;
-    ctx.clearRect(0,0,W,H);
     ctx.fillStyle='rgba(0,0,10,.97)';ctx.fillRect(0,0,W,H);
-    // Tuiles
     for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
       const t=map.get(x,y);if(t===TILE.VOID)continue;
-      if(!map.walk(x,y))ctx.fillStyle='#0c0a07';
+      if(!map.walkAny(x,y))ctx.fillStyle='#0c0a07'; // use walkAny — doors change walkability but not tiles
       else if(t===TILE.WATER)ctx.fillStyle='#0a2040';
       else if(t===TILE.FLOOR3)ctx.fillStyle='#160d22';
       else ctx.fillStyle='#261a0c';
       ctx.fillRect(Math.floor(x*sx),Math.floor(y*sy),Math.ceil(sx)+1,Math.ceil(sy)+1);
     }
-    // Reliques (etoiles dorees)
-    if(items){
-      for(const it of items){
-        if(it.taken||it.type!=='relic')continue;
-        const rpulse=.55+Math.sin(Date.now()*.004+it.x)*.45;
-        ctx.fillStyle=`rgba(255,200,60,${rpulse})`;
-        ctx.shadowColor='#ffcc40';ctx.shadowBlur=6;
-        ctx.beginPath();ctx.arc(it.x/T*sx,it.y/T*sy,3.2,0,Math.PI*2);ctx.fill();
-        ctx.shadowBlur=0;
-      }
+    this._tileMap=map;
+    this._tileDirty=false;
+  }
+
+  draw(map,players,creatures,beacon,items,game){
+    const ctx=this.ctx,W=this.el.width,H=this.el.height;
+    const sx=W/MW,sy=H/MH;
+    const now=performance.now(); // use performance.now() for animation — no system call overhead
+
+    // Rebuild tile cache only when needed (map change, door open)
+    if(this._tileDirty||this._tileMap!==map||this._tileCanvas.width!==W){
+      this._buildTileCache(map,W,H);
     }
-    // Beacon (pulsant)
-    const bpulse=.5+Math.sin(Date.now()*.004)*.5;
-    ctx.fillStyle=`rgba(74,144,255,${.7+bpulse*.3})`;
-    ctx.shadowColor='#4a90ff';ctx.shadowBlur=8*bpulse;
-    ctx.beginPath();ctx.arc(beacon.x/T*sx,beacon.y/T*sy,4.5,0,Math.PI*2);ctx.fill();
-    ctx.shadowBlur=0;
-    // Creatures (points rouges)
-    for(const c of creatures){
-      if(c.dead)continue;
-      ctx.fillStyle='rgba(255,40,20,.85)';
-      ctx.beginPath();ctx.arc(c.x/T*sx,c.y/T*sy,2,0,Math.PI*2);ctx.fill();
-    }
-    // Joueurs avec indicateur de direction
-    for(const p of players){
-      if(p.dead)continue;
-      const col=p.id==='p1'?'#ffcc33':'#44aaff';
-      ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=6;
-      ctx.beginPath();ctx.arc(p.x/T*sx,p.y/T*sy,3.8,0,Math.PI*2);ctx.fill();
-      ctx.strokeStyle=col;ctx.lineWidth=1.2;
-      ctx.beginPath();
-      ctx.moveTo(p.x/T*sx,p.y/T*sy);
-      ctx.lineTo(p.x/T*sx+p.face.x*7,p.y/T*sy+p.face.y*7);
-      ctx.stroke();
-      ctx.shadowBlur=0;
-    }
-    // FIX15: pressure plates — cyan octagon markers
-    if(game&&game.pressurePlates){
-      for(const plate of game.pressurePlates){
-        ctx.fillStyle=plate.active?'rgba(68,255,136,.9)':'rgba(100,120,200,.7)';
-        ctx.beginPath();ctx.arc(plate.x/T*sx,plate.y/T*sy,2.5,0,Math.PI*2);ctx.fill();
-      }
-    }
-    // FIX15: sealed room doors — red bars
+
+    // Draw cached tile layer
+    ctx.drawImage(this._tileCanvas,0,0);
+
+    // Draw sealed doors on top of cache (they can change)
     if(game&&game.sealedRooms){
       for(const sr of game.sealedRooms){
         if(sr.cleared)continue;
@@ -3244,7 +3230,51 @@ class Minimap{
         }
       }
     }
-    // FIX15: torch sequence torches — orange dots
+
+    // Reliques — no shadowBlur (expensive), use opacity pulse only
+    if(items){
+      for(const it of items){
+        if(it.taken||it.type!=='relic')continue;
+        const rpulse=.55+Math.sin(now*.004+it.x)*.45;
+        ctx.fillStyle=`rgba(255,200,60,${rpulse})`;
+        ctx.beginPath();ctx.arc(it.x/T*sx,it.y/T*sy,3.2,0,Math.PI*2);ctx.fill();
+      }
+    }
+
+    // Beacon — no shadowBlur
+    const bpulse=.5+Math.sin(now*.004)*.5;
+    ctx.fillStyle=`rgba(74,144,255,${.7+bpulse*.3})`;
+    ctx.beginPath();ctx.arc(beacon.x/T*sx,beacon.y/T*sy,4.5,0,Math.PI*2);ctx.fill();
+
+    // Creatures — plain red dots
+    ctx.fillStyle='rgba(255,40,20,.85)';
+    for(const c of creatures){
+      if(c.dead)continue;
+      ctx.beginPath();ctx.arc(c.x/T*sx,c.y/T*sy,2,0,Math.PI*2);ctx.fill();
+    }
+
+    // Players — no shadowBlur, use colored dots + direction line
+    for(const p of players){
+      if(p.dead)continue;
+      const col=p.id==='p1'?'#ffcc33':'#44aaff';
+      ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(p.x/T*sx,p.y/T*sy,3.8,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle=col;ctx.lineWidth=1.2;
+      ctx.beginPath();
+      ctx.moveTo(p.x/T*sx,p.y/T*sy);
+      ctx.lineTo(p.x/T*sx+p.face.x*7,p.y/T*sy+p.face.y*7);
+      ctx.stroke();
+    }
+
+    // Pressure plates
+    if(game&&game.pressurePlates){
+      for(const plate of game.pressurePlates){
+        ctx.fillStyle=plate.active?'rgba(68,255,136,.9)':'rgba(100,120,200,.7)';
+        ctx.beginPath();ctx.arc(plate.x/T*sx,plate.y/T*sy,2.5,0,Math.PI*2);ctx.fill();
+      }
+    }
+
+    // Torch sequence
     if(game&&game.torchSequence&&!game.torchSequence.solved){
       for(const t of game.torchSequence.torches){
         ctx.fillStyle=t.lit?'rgba(255,160,20,.95)':'rgba(160,90,20,.6)';
@@ -3597,19 +3627,22 @@ class Game{
     // Echo mode
     this.echoEnabled=true; // always-on visual mode
 
-    document.addEventListener('sentinel_wake',()=>{
+    // Store bound handlers so they can be removed if needed (prevent accumulation across resets)
+    // These are added once at construction time — the game class itself is only instantiated once
+    this._onSentinelWake=()=>{
       const sw=document.getElementById('sentinel-warn');
       if(sw){sw.classList.add('show');setTimeout(()=>sw.classList.remove('show'),2200);}
-    });
-    document.addEventListener('playerhit',()=>{
+    };
+    this._onPlayerHit=()=>{
       this._triggerShake(9,280);
-      // Doom timer: advance on each hit
       if(this.doomActive){
         this.doomProgress=Math.min(1,this.doomProgress+0.12);
         const df=document.getElementById('doom-fill');
         if(df)df.style.width=(this.doomProgress*100)+'%';
       }
-    });
+    };
+    document.addEventListener('sentinel_wake',this._onSentinelWake);
+    document.addEventListener('playerhit',this._onPlayerHit);
 
     this._resize();
     window.addEventListener('resize',()=>this._resize());
@@ -3617,12 +3650,6 @@ class Game{
 
     // ── DOM CACHE — évite getElementById à chaque frame ──
     this._dom={};
-    const ids=['hud-hp','light-fill','light-pct','act-bar','act-fill','act-lbl',
-      'beacon-ui','relic-count','lantern-slot','lantern-name','lantern-fuel-fill',
-      'wpn-cd-fill','weapon-slot','water-indicator','p2-hud','pvpK1','pvpK2',
-      'voice-mute-btn','voice-mute-icon','voice-mute-txt','vignette',
-      'revive-fill','revive-bar','doom-fill'];
-    // Populated lazily on first use (DOM might not be ready yet)
     this._domReady=false;
   }
 
@@ -3633,11 +3660,23 @@ class Game{
       'wpn-cd-fill','weapon-slot','water-indicator','p2-hud','pvpK1','pvpK2',
       'voice-mute-btn','voice-mute-icon','voice-mute-txt','vignette',
       'revive-fill','revive-bar','doom-fill'];
-    for(const id of ids)this._dom[id]=document.getElementById(id);
-    this._domReady=true;
+    let allFound=true;
+    for(const id of ids){
+      const el=document.getElementById(id);
+      if(el)this._dom[id]=el;
+      else allFound=false;
+    }
+    // Only mark ready when all elements exist (won't permanently cache null)
+    if(allFound)this._domReady=true;
   }
 
-  _el(id){return this._dom[id]||(this._dom[id]=document.getElementById(id));}
+  // Lookup with null-safe caching — never stores null permanently
+  _el(id){
+    if(this._dom[id])return this._dom[id];
+    const el=document.getElementById(id);
+    if(el)this._dom[id]=el;
+    return el;
+  }
 
   _resize(){
     const w=window.innerWidth,h=window.innerHeight;
@@ -4282,6 +4321,7 @@ class Game{
   _initGame(){
     this.state=GS.PLAY;
     this.paused=false;
+    if(this.mm)this.mm.invalidateTiles(); // new map = must rebuild tile cache
     const _po=document.getElementById('pause-overlay');if(_po)_po.style.display='none';
     this._show(); // hide all screens
     document.getElementById('hud').classList.remove('gone');
@@ -4647,7 +4687,8 @@ class Game{
         if(alive.length===0&&!sr.cleared){
           // Ouvrir les portes
           sr.cleared=true;
-          for(const d of sr.doors)this.map.blockedTiles.delete(d.x+','+d.y);
+          for(const d of sr.doors)this.map.blockedTiles.delete(d.y*MW+d.x);
+          if(this.mm)this.mm.invalidateTiles(); // rebuild minimap tile cache with doors open
           // Spawn coffre (torch = lumière bonus) au centre de la salle
           this.items.push(new Item(r.cx*T+T/2,r.cy*T+T/2,'torch'));
           this.items.push(new Item(r.cx*T+T*1.5,r.cy*T+T/2,'oil'));
@@ -4820,19 +4861,8 @@ class Game{
       this._torchSeqKey=(this.input.down('KeyE')||this.input.touch?.atk);
     }
 
-    // ── WRAITH TRAIL DRAW (special draw pass via particles) ──
-    for(const c of this.creatures){
-      if(c.type===CT.WRAITH&&!c.dead&&c.trail&&c.trail.length>2&&this.particles.pool.length<750){
-        for(let i=0;i<c.trail.length;i+=2){
-          const a=i/c.trail.length*.35;
-          this.particles.pool.push({
-            x:c.trail[i].x,y:c.trail[i].y,vx:0,vy:0,
-            life:a,max:a+.01,sz:4*(i/c.trail.length),
-            type:'wake',age:0
-          });
-        }
-      }
-    }
+    // ── WRAITH TRAIL DRAW moved to _render() — no more per-frame object allocation ──
+
     for(let i=this.specialItems.length-1;i>=0;i--){
       const si=this.specialItems[i];
       si.life-=dt;
@@ -4897,12 +4927,16 @@ class Game{
       if(Math.random()<.12)this.particles.emit(tx2,ty2,'ember',1);
     }
 
-    // Remote player smooth interpolation
+    // Remote player smooth interpolation + death timer
     for(const rp of this.players){
       if(rp.isLocal||rp._ntx===undefined)continue;
-      const lf=Math.min(1,0.22+V.dist({x:rp.x,y:rp.y},{x:rp._ntx,y:rp._nty})*.004);
-      rp.x=lerp(rp.x,rp._ntx,lf);
-      rp.y=lerp(rp.y,rp._nty,lf);
+      // BUG FIX: increment deathT for remote dead players so their death animation completes
+      if(rp.dead)rp.deathT+=dt*1000;
+      if(!rp.dead){
+        const lf=Math.min(1,0.22+V.dist({x:rp.x,y:rp.y},{x:rp._ntx,y:rp._nty})*.004);
+        rp.x=lerp(rp.x,rp._ntx,lf);
+        rp.y=lerp(rp.y,rp._nty,lf);
+      }
     }
 
     // Camera
@@ -5173,7 +5207,7 @@ class Game{
             sd.active=true;
             const r=sd.room;
             // Bloquer les tuiles de porte
-            for(const d of sd.doors)this.map.blockedTiles.add(d.x+','+d.y);
+            for(const d of sd.doors)this.map.blockedTiles.add(d.y*MW+d.x);
             // Spawn 3-5 ennemis dans la salle
             const enemies=[];
             const cnt=rndI(3,5);
@@ -5418,7 +5452,7 @@ class Game{
       const lop=this.players.find(p=>p.id!==lp.id);
       if(lp.kills>=CFG.PVP_KILLS_WIN){
         this._triggerWin('Victoire','Tu as éliminé ton adversaire '+CFG.PVP_KILLS_WIN+' fois');
-        if(lop)this.net.send({type:'dead',title:'Defeated','sub':'Your opponent won'});
+        if(lop)this.net.send({type:'dead',title:'Defeated',sub:'Your opponent won'});
         return;
       }
       if(lop&&lop.kills>=CFG.PVP_KILLS_WIN){
@@ -5498,6 +5532,8 @@ class Game{
   _render(){
     const ctx=this.ctx,cx=this.cam.x,cy=this.cam.y,vw=this.vw,vh=this.vh;
     const lp=this.players.find(p=>p.isLocal)||this.players[0];
+    // Cache timestamp once — avoids N separate Date.now() calls with drift between draws
+    this._renderNow=Date.now();
 
     ctx.fillStyle='#000';ctx.fillRect(0,0,vw,vh);
 
@@ -5654,6 +5690,23 @@ class Game{
 
     // Particles (floor level)
     this.particles.draw(ctx,cx,cy);
+
+    // ── WRAITH TRAIL — direct draw, no object allocation ──
+    ctx.save();ctx.lineCap='round';
+    for(const c of this.creatures){
+      if(c.type===CT.WRAITH&&!c.dead&&c.trail&&c.trail.length>2){
+        for(let i=1;i<c.trail.length;i++){
+          const a=(i/c.trail.length)*.38;
+          ctx.strokeStyle=`rgba(120,80,220,${a})`;
+          ctx.lineWidth=3*(i/c.trail.length);
+          ctx.beginPath();
+          ctx.moveTo(c.trail[i-1].x-cx,c.trail[i-1].y-cy);
+          ctx.lineTo(c.trail[i].x-cx,c.trail[i].y-cy);
+          ctx.stroke();
+        }
+      }
+    }
+    ctx.restore();
 
     // Creatures
     for(const c of this.creatures)c.draw(ctx,cx,cy);
