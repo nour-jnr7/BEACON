@@ -701,9 +701,17 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 #joy-zone{position:absolute;bottom:0;left:0;width:54%;height:66%;
   pointer-events:auto;touch-action:none;}
 
+/* Joystick hint indicator */
+#joy-hint{
+  position:absolute;bottom:22px;left:22px;
+  font-size:28px;opacity:.18;pointer-events:none;
+  transition:opacity .3s ease;
+}
+#joy-zone:active #joy-hint{opacity:0;}
+
 /* Dynamic joystick base */
 #joy-base{
-  position:fixed;border-radius:50%;width:132px;height:132px;
+  position:fixed;border-radius:50%;width:140px;height:140px;
   background:radial-gradient(circle,rgba(74,144,255,.07) 0%,rgba(74,144,255,.02) 55%,transparent 100%);
   border:1px solid rgba(74,144,255,.25);
   display:none;transform:translate(-50%,-50%);
@@ -716,7 +724,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
 /* Joystick knob */
 #joy-knob{
-  position:fixed;border-radius:50%;width:56px;height:56px;
+  position:fixed;border-radius:50%;width:62px;height:62px;
   background:radial-gradient(circle at 38% 32%,rgba(140,195,255,.75),rgba(74,144,255,.5));
   border:1.5px solid rgba(140,195,255,.85);
   box-shadow:0 0 22px rgba(74,144,255,.55),0 4px 14px rgba(0,0,0,.45);
@@ -807,6 +815,22 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 }
 
 /* ── Item buttons — row above action buttons, anchored right ── */
+/* Bouton pause mobile */
+#mb-pause{
+  position:absolute;top:14px;right:14px;
+  width:40px;height:40px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,16,.6);
+  border:1px solid rgba(255,255,255,.18);
+  color:rgba(255,255,255,.75);font-size:16px;
+  pointer-events:auto;touch-action:none;
+  -webkit-tap-highlight-color:transparent;
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:background .1s,transform .06s;
+  z-index:10;
+}
+#mb-pause.pressed{background:rgba(255,255,255,.12);transform:scale(.88);}
+
 #mobile-items{
   position:absolute;bottom:175px;right:14px;
   display:flex;flex-direction:column;gap:8px;
@@ -814,7 +838,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   align-items:flex-end;
 }
 .mob-item-btn{
-  width:46px;height:46px;border-radius:50%;
+  width:54px;height:54px;border-radius:50%;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
   gap:1px;
   font-size:8px;letter-spacing:1px;font-family:var(--font-ui);
@@ -876,6 +900,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   #mobile-btns{bottom:calc(18px + env(safe-area-inset-bottom));}
   #mobile-items{bottom:calc(175px + env(safe-area-inset-bottom));}
   #joy-zone{padding-bottom:env(safe-area-inset-bottom);}
+  #mb-pause{top:calc(14px + env(safe-area-inset-top));right:calc(14px + env(safe-area-inset-right));}
   #hud-hp{bottom:calc(32px + env(safe-area-inset-bottom));}
   #item-slots{bottom:calc(32px + env(safe-area-inset-bottom));}
   #beacon-ui{bottom:calc(210px + env(safe-area-inset-bottom));}
@@ -1019,12 +1044,13 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         <div class="ctrl-title">⌨ Clavier</div>
         <div class="ctrl-row"><span class="ctrl-key">W A S D</span><span class="ctrl-desc">Déplacer</span></div>
         <div class="ctrl-row"><span class="ctrl-key green">E</span><span class="ctrl-desc">Interagir / Activer</span></div>
-        <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">Dash</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">Space</span><span class="ctrl-desc">Attaque / Interagir</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">CTRL</span><span class="ctrl-desc">Dash (esquive)</span></div>
         <div class="ctrl-row"><span class="ctrl-key red">Clic G</span><span class="ctrl-desc">Attaque corps-à-corps</span></div>
         <div class="ctrl-row"><span class="ctrl-key gold">Q</span><span class="ctrl-desc">Utiliser arme</span></div>
         <div class="ctrl-row"><span class="ctrl-key gold">F</span><span class="ctrl-desc">Huile / Fumée / Piège</span></div>
         <div class="ctrl-row"><span class="ctrl-key gold">R</span><span class="ctrl-desc">Ramasser</span></div>
-        <div class="ctrl-row"><span class="ctrl-key">L</span><span class="ctrl-desc">Lanterne</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">T</span><span class="ctrl-desc">Lanterne</span></div>
         <div class="ctrl-row"><span class="ctrl-key">M</span><span class="ctrl-desc">Mute voix (multi)</span></div>
       </div>
 
@@ -1049,7 +1075,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
         <div class="ctrl-row"><span class="ctrl-key red">ATK</span><span class="ctrl-desc">Attaque</span></div>
         <div class="ctrl-row"><span class="ctrl-key">DASH</span><span class="ctrl-desc">Esquive rapide</span></div>
         <div class="ctrl-row"><span class="ctrl-key gold">WPN</span><span class="ctrl-desc">Arme à distance</span></div>
-        <div class="ctrl-row"><span class="ctrl-key green">EVD</span><span class="ctrl-desc">Interagir</span></div>
+        <div class="ctrl-row"><span class="ctrl-key">RUN</span><span class="ctrl-desc">Sprint (maintenir)</span></div>
         <div class="ctrl-row"><span class="ctrl-key gold" style="font-size:9px">🔦</span><span class="ctrl-desc">Activer la lanterne</span></div>
         <div class="ctrl-row"><span class="ctrl-key" style="font-size:9px">F / R</span><span class="ctrl-desc">Objets inventaire</span></div>
       </div>
@@ -1089,7 +1115,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 <div id="lobbyScreen" class="screen hidden">
   <div class="lobby-card">
     <div class="mode-badge" id="lobbyBadge">Co-op</div>
-    <h2 id="lobbyTitle">Online</h2>
+    <h2 id="lobbyTitle">En ligne</h2>
     <!-- FIX17: choice section shown first -->
     <div id="lobbyChoice">
       <button class="btn" id="btnChooseHost" style="pointer-events:auto;margin-bottom:8px">🔗 Héberger</button>
@@ -1195,7 +1221,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="item-slot" id="slot-f" title="F - Smoke"><span>F</span><span class="item-slot-key">F</span></div>
     <div class="item-slot" id="slot-r" title="R - Light Trap"><span>R</span><span class="item-slot-key">R</span></div>
   </div>
-  <div id="hint">WASD Move &nbsp;·&nbsp; SHIFT Run &nbsp;·&nbsp; E Attack/Revive &nbsp;·&nbsp; Z Weapon &nbsp;·&nbsp; CTRL Dash &nbsp;·&nbsp; Q/F/R Items &nbsp;·&nbsp; T Lanterne</div>
+  <div id="hint">WASD Déplacer &nbsp;·&nbsp; SHIFT Sprint &nbsp;·&nbsp; E Attaquer/Relever &nbsp;·&nbsp; Z Arme &nbsp;·&nbsp; CTRL Dash &nbsp;·&nbsp; Q/F/R Objets &nbsp;·&nbsp; T Lanterne</div>
   <div id="dash-cd">DASH ▸</div>
   <!-- ===== ÉQUIPEMENT PANEL (droite) ===== -->
   <div id="equip-panel">
@@ -1232,19 +1258,19 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
   </div>
 </div>
 <div id="pvp-score" class="gone">
-  <span class="pvp-name" id="pvpName1">You</span>
+  <span class="pvp-name" id="pvpName1">Vous</span>
   <span class="pvp-kills" id="pvpK1">0</span>
   <span class="pvp-vs">vs</span>
   <span class="pvp-kills" id="pvpK2">0</span>
-  <span class="pvp-name" id="pvpName2">Enemy</span>
+  <span class="pvp-name" id="pvpName2">Ennemi</span>
 </div>
 <div id="room-pill" class="gone"></div>
 <div id="act-bar">
-  <div id="act-lbl">Activating Beacon...</div>
+  <div id="act-lbl">Activation du Beacon...</div>
   <div id="act-track"><div id="act-fill"></div></div>
 </div>
 <div id="revive-bar">
-  <div id="revive-lbl">Reviving partner...</div>
+  <div id="revive-lbl">Relevez le partenaire...</div>
   <div id="revive-track"><div id="revive-fill"></div></div>
 </div>
 <div id="spike-warning">⚠ SPIKE TRAP</div>
@@ -1253,9 +1279,11 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 <!-- ========== MOBILE CONTROLS ========== -->
 <div id="mobile-controls">
   <div id="joy-zone">
+    <div id="joy-hint">🕹</div>
     <div id="joy-base"></div>
     <div id="joy-knob"></div>
   </div>
+  <div id="mb-pause">⏸</div>
   <div id="mobile-items">
     <div class="mob-item-btn" id="mb-q">Q</div>
     <div class="mob-item-btn" id="mb-f">F</div>
@@ -1263,7 +1291,7 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
     <div class="mob-item-btn" id="mb-lnt">LNT</div>
   </div>
   <div id="mobile-btns">
-    <div class="mob-btn" id="mb-evade"><span class="mob-btn-icon">⚡</span><span class="mob-btn-lbl">ACT</span></div>
+    <div class="mob-btn" id="mb-evade"><span class="mob-btn-icon">🏃</span><span class="mob-btn-lbl">RUN</span></div>
     <div class="mob-btn" id="mb-dash"><span class="mob-btn-icon">💨</span><span class="mob-btn-lbl">DASH</span></div>
     <div class="mob-btn" id="mb-wpn"><span class="mob-btn-icon">🏹</span><span class="mob-btn-lbl">WPN</span></div>
     <div class="mob-btn" id="mb-atk"><span class="mob-btn-icon">⚔</span><span class="mob-btn-lbl">ATK</span></div>
@@ -1293,12 +1321,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 <div id="surge-warning">DARKNESS SURGE</div>
 <div id="event-indicator"><span id="event-txt"></span></div>
 <div id="deathScreen" class="screen hidden gone">
-  <div class="death-title" id="deathTitle">You Died</div>
-  <div class="death-sub" id="deathSub">The darkness consumed you</div>
+  <div class="death-title" id="deathTitle">Tu es mort</div>
+  <div class="death-sub" id="deathSub">L'obscurité t'a englouti</div>
   <div class="score-panel" id="deathScore">
-    <div class="score-stat"><span class="score-val" id="dsc-time">0:00</span><span class="score-key">Survived</span></div>
-    <div class="score-stat"><span class="score-val" id="dsc-kills">0</span><span class="score-key">Eliminated</span></div>
-    <div class="score-stat"><span class="score-val" id="dsc-dist">0m</span><span class="score-key">Travelled</span></div>
+    <div class="score-stat"><span class="score-val" id="dsc-time">0:00</span><span class="score-key">Survécu</span></div>
+    <div class="score-stat"><span class="score-val" id="dsc-kills">0</span><span class="score-key">Éliminés</span></div>
+    <div class="score-stat"><span class="score-val" id="dsc-dist">0m</span><span class="score-key">Parcouru</span></div>
     <div class="score-stat"><span class="score-val" id="dsc-light">0%</span><span class="score-key">Light Left</span></div>
     <div class="score-stat"><span class="score-val" id="dsc-dmg">0</span><span class="score-key">Dmg Taken</span></div>
     <div class="score-stat"><span class="score-val" id="dsc-wkills">0</span><span class="score-key">Wpn Kills</span></div>
@@ -1313,12 +1341,12 @@ body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:9999;
 
 <!-- ========== VICTORY ========== -->
 <div id="victoryScreen" class="screen hidden gone">
-  <div class="victory-title" id="victoryTitle">Beacon Lit</div>
-  <div class="victory-sub" id="victorySub">Light returned to the world</div>
+  <div class="victory-title" id="victoryTitle">Beacon Allumé</div>
+  <div class="victory-sub" id="victorySub">La lumière est revenue dans le monde</div>
   <div class="score-panel victory-score-panel" id="victoryScore">
-    <div class="score-stat"><span class="score-val" id="vsc-time">0:00</span><span class="score-key">Survived</span></div>
-    <div class="score-stat"><span class="score-val" id="vsc-kills">0</span><span class="score-key">Eliminated</span></div>
-    <div class="score-stat"><span class="score-val" id="vsc-dist">0m</span><span class="score-key">Travelled</span></div>
+    <div class="score-stat"><span class="score-val" id="vsc-time">0:00</span><span class="score-key">Survécu</span></div>
+    <div class="score-stat"><span class="score-val" id="vsc-kills">0</span><span class="score-key">Éliminés</span></div>
+    <div class="score-stat"><span class="score-val" id="vsc-dist">0m</span><span class="score-key">Parcouru</span></div>
     <div class="score-stat"><span class="score-val" id="vsc-light">0%</span><span class="score-key">Light Left</span></div>
     <div class="score-stat"><span class="score-val" id="vsc-dmg">0</span><span class="score-key">Dmg Taken</span></div>
     <div class="score-stat"><span class="score-val" id="vsc-wkills">0</span><span class="score-key">Wpn Kills</span></div>
@@ -1556,7 +1584,7 @@ class Audio {
 class Input{
   constructor(){
     this.k={};
-    this.touch={joyX:0,joyY:0,atk:false,dash:false,wpn:false,q:false,f:false,r:false,lantern:false};
+    this.touch={joyX:0,joyY:0,atk:false,dash:false,wpn:false,q:false,f:false,r:false,lantern:false,run:false};
     this._joyId=-1;this._joyBx=0;this._joyBy=0;
     window.addEventListener('keydown',e=>{this.k[e.code]=true;});
     window.addEventListener('keyup',e=>{this.k[e.code]=false;});
@@ -1594,14 +1622,28 @@ class Input{
       for(const t of e.changedTouches){
         if(t.identifier!==this._joyId)continue;
         this.touch.joyX=0;this.touch.joyY=0;
+        this._joyId=-1;
         jb.style.display='none';jk.style.display='none';
       }
     };
     jz.addEventListener('touchend',endJ,{passive:false});
     jz.addEventListener('touchcancel',endJ,{passive:false});
+    // Bouton pause mobile
+    const mbP=document.getElementById('mb-pause');
+    if(mbP){
+      mbP.addEventListener('touchstart',e=>{
+        e.preventDefault();mbP.classList.add('pressed');
+        if(navigator.vibrate)navigator.vibrate(10);
+      },{passive:false});
+      mbP.addEventListener('touchend',e=>{
+        e.preventDefault();mbP.classList.remove('pressed');
+        // Déclenche Escape pour toggle pause
+        document.dispatchEvent(new KeyboardEvent('keydown',{code:'Escape',key:'Escape',bubbles:true}));
+      },{passive:false});
+    }
     this._bindBtn('mb-atk','atk');this._bindBtn('mb-dash','dash');
     this._bindBtn('mb-wpn','wpn');
-    this._bindBtn('mb-q','q');this._bindBtn('mb-f','f');this._bindBtn('mb-r','r');
+    this._bindBtn('mb-evade','run');this._bindBtn('mb-q','q');this._bindBtn('mb-f','f');this._bindBtn('mb-r','r');
     this._bindBtn('mb-lnt','lantern');
   }
   _bindBtn(id,key){
@@ -1626,7 +1668,7 @@ class Input{
     if(this.down('KeyS')||this.down('ArrowDown'))y+=1;
     if(Math.abs(this.touch.joyX)>.1)x+=this.touch.joyX;
     if(Math.abs(this.touch.joyY)>.1)y+=this.touch.joyY;
-    const run=this.down('ShiftLeft')||this.down('ShiftRight');
+    const run=this.down('ShiftLeft')||this.down('ShiftRight')||this.touch.run;
     const atk=this.down('KeyE')||this.down('Space')||this.touch.atk;
     const dash=this.down('ControlLeft')||this.down('ControlRight')||this.touch.dash;
     const wpn=this.down('KeyZ')||this.touch.wpn;
@@ -3667,13 +3709,13 @@ class Game{
     if(volM){
       volM.addEventListener('input',()=>{
         const v=volM.value/100;
-        if(this.audio&&this.audio.mGain)this.audio.mGain.gain.setTargetAtTime(v*.38,this.audio.ctx.currentTime,.05);
+        if(this.audio&&this.audio.ctx&&this.audio.mGain)this.audio.mGain.gain.setTargetAtTime(v*.38,this.audio.ctx.currentTime,.05);
       });
     }
     if(volS){
       volS.addEventListener('input',()=>{
         const v=volS.value/100;
-        if(this.audio&&this.audio.sGain)this.audio.sGain.gain.setTargetAtTime(v*.75,this.audio.ctx.currentTime,.05);
+        if(this.audio&&this.audio.ctx&&this.audio.sGain)this.audio.sGain.gain.setTargetAtTime(v*.75,this.audio.ctx.currentTime,.05);
       });
     }
 
@@ -3692,10 +3734,7 @@ class Game{
       }
     });
 
-    // PvP lobby: show host/join choice
-    document.getElementById('btnPvp')?.addEventListener('click',()=>{
-      // handled in _showLobby
-    });
+    // PvP lobby: handled via on('btnPvp',...) ci-dessus
   }
 
   async init(){
@@ -4118,30 +4157,30 @@ class Game{
 
   _startHost(){
     document.getElementById('codeDisplay').textContent='....';
-    document.getElementById('hostStatus').textContent='Connecting...';
+    document.getElementById('hostStatus').textContent='Connexion...';
     this.net.host().then(code=>{
       document.getElementById('codeDisplay').textContent=code;
-      document.getElementById('hostStatus').textContent='Waiting for friend...';
+      document.getElementById('hostStatus').textContent='En attente d\'un ami...';
       this.net.onOpen=()=>{
-        document.getElementById('hostStatus').textContent='Connected! Starting...';
+        document.getElementById('hostStatus').textContent='Connecté ! Démarrage...';
         setTimeout(()=>this._startOnline(true),900);
       };
     }).catch(()=>{
-      document.getElementById('hostStatus').textContent='Error. Try again.';
+      document.getElementById('hostStatus').textContent='Erreur. Réessaie.';
     });
   }
 
   _joinNet(){
     const code=document.getElementById('codeInput').value.trim().toUpperCase();
-    if(code.length<4){document.getElementById('joinStatus').textContent='Invalid code';return;}
-    document.getElementById('joinStatus').textContent='Connecting...';
+    if(code.length<4){document.getElementById('joinStatus').textContent='Code invalide';return;}
+    document.getElementById('joinStatus').textContent='Connexion...';
     this.net.join(code).then(()=>{
       this.net.onOpen=()=>{
-        document.getElementById('joinStatus').textContent='Connected! Starting...';
+        document.getElementById('joinStatus').textContent='Connecté ! Démarrage...';
         setTimeout(()=>this._startOnline(false),900);
       };
     }).catch(()=>{
-      document.getElementById('joinStatus').textContent='Room not found.';
+      document.getElementById('joinStatus').textContent='Salon introuvable.';
     });
   }
 
@@ -4149,12 +4188,12 @@ class Game{
 
   _startOnline(isHost){
     document.getElementById('conn-overlay').classList.remove('gone');
-    document.getElementById('connTxt').textContent='Starting...';
+    document.getElementById('connTxt').textContent='Démarrage...';
     this.net.isHost=isHost;
     this.net.onData=(d)=>this._onNetData(d);
     this.net.onClose=()=>{
       if(this.state===GS.PLAY){
-        document.getElementById('p2-hud').textContent='Partner disconnected';
+        document.getElementById('p2-hud').textContent='Partenaire déconnecté';
       }
     };
 
@@ -4349,8 +4388,8 @@ class Game{
     // PvP score UI
     if(this.mode===MODE.PVP){
       document.getElementById('pvp-score').classList.remove('gone');
-      document.getElementById('pvpName1').textContent=this.net.isHost||this.mode===MODE.SOLO?'You':'Enemy';
-      document.getElementById('pvpName2').textContent=this.net.isHost?'Enemy':'You';
+      document.getElementById('pvpName1').textContent=this.net.isHost||this.mode===MODE.SOLO?'Vous':'Ennemi';
+      document.getElementById('pvpName2').textContent=this.net.isHost?'Ennemi':'Vous';
     }else{
       document.getElementById('pvp-score').classList.add('gone');
     }
@@ -4604,7 +4643,7 @@ class Game{
         const inside=ptx>=r.x&&ptx<r.x+r.w&&pty>=r.y&&pty<r.y+r.h;
         if(inside)inSealed=true;
         // Compte les ennemis vivants dans la salle
-        const alive=sr.enemies.filter(c=>!c.dead&&!c.dead);
+        const alive=sr.enemies.filter(c=>!c.dead);
         if(alive.length===0&&!sr.cleared){
           // Ouvrir les portes
           sr.cleared=true;
@@ -5351,14 +5390,14 @@ class Game{
 
     // SOLO / COOP win: beacon activated
     if(this.mode!==MODE.PVP&&this.beaconE.activated){
-      this._triggerWin('Beacon Lit','Light has returned to the world');
-      if(this.mode!==MODE.SOLO)this.net.send({type:'win',title:'Beacon Lit',sub:'Light has returned to the world'});
+      this._triggerWin('Beacon Allumé','La lumière est revenue dans le monde');
+      if(this.mode!==MODE.SOLO)this.net.send({type:'win',title:'Beacon Allumé',sub:'La lumière est revenue dans le monde'});
       return;
     }
 
     // SOLO / COOP lose: all dead
     if(this.mode!==MODE.PVP&&allDead){
-      this._triggerDead('You Died','The darkness consumed you');
+      this._triggerDead('Tu es mort','L\'obscurité t\'a englouti');
       return;
     }
 
@@ -5378,7 +5417,7 @@ class Game{
       // Check kills
       const lop=this.players.find(p=>p.id!==lp.id);
       if(lp.kills>=CFG.PVP_KILLS_WIN){
-        this._triggerWin('Victory','You eliminated your opponent '+CFG.PVP_KILLS_WIN+' times');
+        this._triggerWin('Victoire','Tu as éliminé ton adversaire '+CFG.PVP_KILLS_WIN+' fois');
         if(lop)this.net.send({type:'dead',title:'Defeated','sub':'Your opponent won'});
         return;
       }
@@ -5407,7 +5446,7 @@ class Game{
     const sc=this._getScore(lp);
     document.getElementById('hud').classList.add('gone');
     document.getElementById('pvp-score').classList.add('gone');
-    document.getElementById('victoryTitle').textContent=title||'Victory';
+    document.getElementById('victoryTitle').textContent=title||'Victoire';
     document.getElementById('victorySub').textContent=sub||'';
     document.getElementById('vsc-time').textContent=sc.time;
     document.getElementById('vsc-kills').textContent=sc.kills;
@@ -5432,8 +5471,8 @@ class Game{
     setTimeout(()=>{
       document.getElementById('hud').classList.add('gone');
       document.getElementById('pvp-score').classList.add('gone');
-      document.getElementById('deathTitle').textContent=title||'You Died';
-      document.getElementById('deathSub').textContent=sub||'The darkness consumed you';
+      document.getElementById('deathTitle').textContent=title||'Tu es mort';
+      document.getElementById('deathSub').textContent=sub||'L\'obscurité t\'a englouti';
       document.getElementById('dsc-time').textContent=sc.time;
       document.getElementById('dsc-kills').textContent=sc.kills;
       document.getElementById('dsc-dist').textContent=sc.dist+'m';
@@ -5755,7 +5794,7 @@ class Game{
     if(op&&this.mode!==MODE.SOLO){
       p2el.style.display='block';
       if(this.mode===MODE.COOP){
-        p2el.innerHTML=`Partner ${op.dead?'<span style="color:#ff4444">▼ Down</span>':'<span style="color:#44ff88">● Online</span>'}<br>
+        p2el.innerHTML=`Partenaire ${op.dead?'<span style="color:#ff4444">▼ Mort</span>':'<span style="color:#44ff88">● En ligne</span>'}<br>
           HP ${op.hp} &nbsp; Light ${Math.round(op.light)}%`;
       }else{
         p2el.innerHTML=`Enemy ${op.dead?'<span style="color:#44ff88">▼ Dead</span>':'<span style="color:#ff4444">● Alive</span>'}<br>
@@ -5772,7 +5811,6 @@ class Game{
 
     // ── VOICE HUD update — skip in solo (no voice channel) ──
     if(this.mode===MODE.SOLO)return;
-    if(this.mode!==MODE.SOLO){
       this.voice.tick();
       this._updateVoiceBars('voice-bars-local',this.voice.muted?0:this.voice.localLevel,'voice-row-local','voice-mic-local');
       this._updateVoiceBars('voice-bars-remote',this.voice.remoteLevel,'voice-row-remote','voice-mic-remote');
@@ -5786,7 +5824,6 @@ class Game{
       const muteTxt=document.getElementById('voice-mute-txt');
       if(muteIco)muteIco.textContent=this.voice.muted?'🔇':'🎙';
       if(muteTxt)muteTxt.textContent=this.voice.muted?'Muet':'Actif';
-    }
   }
 
   // Anime les barres de niveau audio
@@ -5824,13 +5861,14 @@ class Game{
 const game=new Game();
 window.addEventListener('load',()=>game.init());
 document.addEventListener('click',()=>game.audio.resume(),{once:true});
+document.addEventListener('touchstart',()=>game.audio.resume(),{once:true,passive:true});
 document.addEventListener('keydown',()=>game.audio.resume(),{once:true});
 </script>
 
 <!-- ========== PAUSE OVERLAY ========== -->
 <div id="pause-overlay" style="display:none;position:fixed;inset:0;z-index:500;
   background:rgba(0,0,12,.88);backdrop-filter:blur(8px);
-  display:none;align-items:center;justify-content:center;flex-direction:column;gap:24px;">
+  align-items:center;justify-content:center;flex-direction:column;gap:24px;">
   <div style="font-size:clamp(32px,6vw,52px);font-weight:900;letter-spacing:16px;
     color:var(--blue);font-family:var(--font-title);
     text-shadow:0 0 60px var(--blue-glow);">PAUSE</div>
